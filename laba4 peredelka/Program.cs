@@ -7,6 +7,7 @@ using Microsoft.VisualBasic;
 using System.Collections.ObjectModel;
 using NPOI.SS.Formula.Functions;
 using System.Runtime.CompilerServices;
+using System.Text.Json;
 
 public class Program
 {
@@ -33,6 +34,8 @@ public class Program
         task_3(Gen_shoolFirms(), ["Фирма А", "Фирма Б", "Фирма В", "Фирма Г", "Фирма Д", "успешные ребятки"]);
         Console.WriteLine("task_4:\n");
         task_4("input.txt");
+        Console.WriteLine("task_5 started");
+        task_5("students.txt");
     }
 
 
@@ -209,5 +212,78 @@ public class Program
             Console.WriteLine($"Файл {filePath} не найден.");
         }
     }
+    public static void task_5(string filePath)
+    {
+        string outputFilePath = "logins.json"; // Путь к файлу для сохранения логинов
+        List<Student> students = new List<Student>();
+        Dictionary<string, int> surnameCount = new Dictionary<string, int>();
+
+        try
+        {
+            // Чтение строк из файла
+            var lines = File.ReadAllLines(filePath);
+            int N = int.Parse(lines[0]); // Число учеников
+
+            // Обработка каждой строки
+            for (int i = 1; i <= N; i++)
+            {
+                string line = lines[i];
+                string[] parts = line.Split(' ');
+
+                if (parts.Length == 2)
+                {
+                    string surname = parts[0];
+                    string name = parts[1];
+
+                    // Формирование логина
+                    string login;
+                    if (!surnameCount.ContainsKey(surname))
+                    {
+                        // Если фамилия встречается впервые
+                        login = surname;
+                        surnameCount[surname] = 1; // Увеличиваем счетчик
+                    }
+                    else
+                    {
+                        // Если фамилия уже есть, добавляем номер
+                        surnameCount[surname]++;
+                        login = surname + surnameCount[surname];
+                    }
+
+                    // Добавляем ученика в список
+                    students.Add(new Student { Surname = surname, Name = name, Login = login });
+                }
+            }
+
+            // Сериализация в JSON
+            string json = JsonSerializer.Serialize(students, new JsonSerializerOptions { WriteIndented = true });
+            File.WriteAllText(outputFilePath, json);
+
+            var readStudents = JsonSerializer.Deserialize<List<Student>>(File.ReadAllText(outputFilePath));
+
+            // Вывод логинов
+            foreach (var student in readStudents)
+            {
+                Console.WriteLine(student.Login);
+            }
+
+            Console.WriteLine($"Логины успешно сохранены в файл {outputFilePath}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Ошибка: {ex.Message}");
+        }
+    }
+
+    [Serializable]
+    // Класс студента
+    public class Student
+    {
+        public string Surname { get; set; }
+        public string Name { get; set; }
+        public string Login { get; set; }
+    }
 }
+
+
 
